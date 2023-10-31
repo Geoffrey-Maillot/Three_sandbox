@@ -19,6 +19,18 @@
 
     <!--? TITLE FROM JS-->
     <title>Tank</title>
+
+    <style>
+      #info {
+        position: absolute;
+        left: 1em;
+        top: 6em;
+        background: rgba(0, 0, 0, 0.8);
+        padding: 0.5em;
+        color: white;
+        font-family: monospace;
+      }
+    </style>
   </head>
   <body>
     <header class="navbar flex justify-between gap-4 bg-base-200">
@@ -74,7 +86,8 @@
       </button>
     </header>
     <div class="app">
-      <canvas id="canva" class="h-[calc(100vh_-_64px)] w-screen"></canvas>
+      <div id="info"></div>
+      <canvas id="canvas" class="h-[calc(100vh_-_64px)] w-screen"></canvas>
     </div>
   </body>
 </html>

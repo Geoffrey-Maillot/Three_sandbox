@@ -1,71 +1,51 @@
-import {
-  DirectionalLight,
-  Mesh,
-  MeshPhongMaterial,
-  PerspectiveCamera,
-  PlaneGeometry,
-  Scene,
-  Vector3,
-  Group,
-  WebGLRenderer,
-  BoxGeometry,
-  CylinderGeometry,
-  SphereGeometry,
-  SplineCurve,
-  Vector2,
-  BufferGeometry,
-  LineBasicMaterial,
-  Line,
-} from "three";
+import * as THREE from "three";
 
-import { OrbitControls } from "three/examples/jsm/controls/OrbitControls.js";
-
-function init() {
-  const canvas = document.getElementById("canvas") as HTMLCanvasElement;
-  const renderer = new WebGLRenderer({ antialias: true, canvas });
+function main() {
+  const canvas = document.querySelector("canvas") as HTMLCanvasElement;
+  const renderer = new THREE.WebGLRenderer({ antialias: true, canvas: canvas });
   renderer.setClearColor(0xaaaaaa);
   renderer.shadowMap.enabled = true;
 
   function makeCamera(fov = 40) {
-    const aspect = 2;
+    const aspect = 2; // the canvas default
     const zNear = 0.1;
     const zFar = 1000;
-    return new PerspectiveCamera(fov, aspect, zNear, zFar);
+    return new THREE.PerspectiveCamera(fov, aspect, zNear, zFar);
   }
 
   const camera = makeCamera();
   camera.position.set(8, 4, 10).multiplyScalar(3);
   camera.lookAt(0, 0, 0);
 
-  new OrbitControls(camera, canvas);
+  const scene = new THREE.Scene();
 
-  const scene = new Scene();
+  {
+    const light = new THREE.DirectionalLight(0xffffff, 3);
+    light.position.set(0, 20, 0);
+    scene.add(light);
+    light.castShadow = true;
+    light.shadow.mapSize.width = 2048;
+    light.shadow.mapSize.height = 2048;
 
-  const light1 = new DirectionalLight(0xffffff, 3);
-  light1.position.set(0, 20, 0);
-  scene.add(light1);
-  light1.castShadow = true;
-  light1.shadow.mapSize.width = 2048;
-  light1.shadow.mapSize.height = 2048;
+    const d = 50;
+    light.shadow.camera.left = -d;
+    light.shadow.camera.right = d;
+    light.shadow.camera.top = d;
+    light.shadow.camera.bottom = -d;
+    light.shadow.camera.near = 1;
+    light.shadow.camera.far = 50;
+    light.shadow.bias = 0.001;
+  }
 
-  const d = 50;
-  light1.shadow.camera.left = -d;
-  light1.shadow.camera.right = d;
-  light1.shadow.camera.top = d;
-  light1.shadow.camera.bottom = -d;
-  light1.shadow.camera.near = 1;
-  light1.shadow.camera.far = 50;
-  light1.shadow.bias = 0.001;
+  {
+    const light = new THREE.DirectionalLight(0xffffff, 3);
+    light.position.set(1, 2, 4);
+    scene.add(light);
+  }
 
-  const light2 = new DirectionalLight(0xffffff, 3);
-  light2.position.set(1, 2, 4);
-  scene.add(light2);
-
-  const groundGeometry = new PlaneGeometry(50, 50);
-  const groundMaterial = new MeshPhongMaterial({
-    color: 0xcc8866,
-  });
-  const groundMesh = new Mesh(groundGeometry, groundMaterial);
+  const groundGeometry = new THREE.PlaneGeometry(50, 50);
+  const groundMaterial = new THREE.MeshPhongMaterial({ color: 0xcc8866 });
+  const groundMesh = new THREE.Mesh(groundGeometry, groundMaterial);
   groundMesh.rotation.x = Math.PI * -0.5;
   groundMesh.receiveShadow = true;
   scene.add(groundMesh);
@@ -74,18 +54,18 @@ function init() {
   const carHeight = 1;
   const carLength = 8;
 
-  const tank = new Group();
+  const tank = new THREE.Object3D();
   scene.add(tank);
 
-  const bodyGeometry = new BoxGeometry(carWidth, carHeight, carLength);
-  const bodyMaterial = new MeshPhongMaterial({ color: 0x6688aa });
-  const bodyMesh = new Mesh(bodyGeometry, bodyMaterial);
+  const bodyGeometry = new THREE.BoxGeometry(carWidth, carHeight, carLength);
+  const bodyMaterial = new THREE.MeshPhongMaterial({ color: 0x6688aa });
+  const bodyMesh = new THREE.Mesh(bodyGeometry, bodyMaterial);
   bodyMesh.position.y = 1.4;
   bodyMesh.castShadow = true;
   tank.add(bodyMesh);
 
-  const cameraFov = 75;
-  const tankCamera = makeCamera(cameraFov);
+  const tankCameraFov = 75;
+  const tankCamera = makeCamera(tankCameraFov);
   tankCamera.position.y = 3;
   tankCamera.position.z = -6;
   tankCamera.rotation.y = Math.PI;
@@ -94,14 +74,13 @@ function init() {
   const wheelRadius = 1;
   const wheelThickness = 0.5;
   const wheelSegments = 6;
-  const wheelGeometry = new CylinderGeometry(
+  const wheelGeometry = new THREE.CylinderGeometry(
     wheelRadius, // top radius
     wheelRadius, // bottom radius
     wheelThickness, // height of cylinder
     wheelSegments,
   );
-  const wheelMaterial = new MeshPhongMaterial({ color: 0x888888 });
-
+  const wheelMaterial = new THREE.MeshPhongMaterial({ color: 0x888888 });
   const wheelPositions = [
     [-carWidth / 2 - wheelThickness / 2, -carHeight / 2, carLength / 3],
     [carWidth / 2 + wheelThickness / 2, -carHeight / 2, carLength / 3],
@@ -110,9 +89,8 @@ function init() {
     [-carWidth / 2 - wheelThickness / 2, -carHeight / 2, -carLength / 3],
     [carWidth / 2 + wheelThickness / 2, -carHeight / 2, -carLength / 3],
   ];
-
   const wheelMeshes = wheelPositions.map((position) => {
-    const mesh = new Mesh(wheelGeometry, wheelMaterial);
+    const mesh = new THREE.Mesh(wheelGeometry, wheelMaterial);
     mesh.position.set(position[0], position[1], position[2]);
     mesh.rotation.z = Math.PI * 0.5;
     mesh.castShadow = true;
@@ -127,7 +105,7 @@ function init() {
   const domePhiEnd = Math.PI * 2;
   const domeThetaStart = 0;
   const domeThetaEnd = Math.PI * 0.5;
-  const domeGeometry = new SphereGeometry(
+  const domeGeometry = new THREE.SphereGeometry(
     domeRadius,
     domeWidthSubdivisions,
     domeHeightSubdivisions,
@@ -136,7 +114,7 @@ function init() {
     domeThetaStart,
     domeThetaEnd,
   );
-  const domeMesh = new Mesh(domeGeometry, bodyMaterial);
+  const domeMesh = new THREE.Mesh(domeGeometry, bodyMaterial);
   domeMesh.castShadow = true;
   bodyMesh.add(domeMesh);
   domeMesh.position.y = 0.5;
@@ -144,14 +122,13 @@ function init() {
   const turretWidth = 0.1;
   const turretHeight = 0.1;
   const turretLength = carLength * 0.75 * 0.2;
-  const turretGeometry = new BoxGeometry(
+  const turretGeometry = new THREE.BoxGeometry(
     turretWidth,
     turretHeight,
     turretLength,
   );
-
-  const turretMesh = new Mesh(turretGeometry, bodyMaterial);
-  const turretPivot = new Group();
+  const turretMesh = new THREE.Mesh(turretGeometry, bodyMaterial);
+  const turretPivot = new THREE.Object3D();
   turretMesh.castShadow = true;
   turretPivot.scale.set(5, 5, 5);
   turretPivot.position.y = 0.5;
@@ -163,15 +140,15 @@ function init() {
   turretCamera.position.y = 0.75 * 0.2;
   turretMesh.add(turretCamera);
 
-  const targetGeometry = new SphereGeometry(0.5, 6, 3);
-  const targetMaterial = new MeshPhongMaterial({
+  const targetGeometry = new THREE.SphereGeometry(0.5, 6, 3);
+  const targetMaterial = new THREE.MeshPhongMaterial({
     color: 0x00ff00,
     flatShading: true,
   });
-  const targetMesh = new Mesh(targetGeometry, targetMaterial);
-  const targetOrbit = new Group();
-  const targetElevation = new Group();
-  const targetBob = new Group();
+  const targetMesh = new THREE.Mesh(targetGeometry, targetMaterial);
+  const targetOrbit = new THREE.Object3D();
+  const targetElevation = new THREE.Object3D();
+  const targetBob = new THREE.Object3D();
   targetMesh.castShadow = true;
   scene.add(targetOrbit);
   targetOrbit.add(targetElevation);
@@ -181,35 +158,36 @@ function init() {
   targetBob.add(targetMesh);
 
   const targetCamera = makeCamera();
-  const targetCameraPivot = new Group();
+  const targetCameraPivot = new THREE.Object3D();
   targetCamera.position.y = 1;
   targetCamera.position.z = -2;
   targetCamera.rotation.y = Math.PI;
   targetBob.add(targetCameraPivot);
   targetCameraPivot.add(targetCamera);
 
-  const curve = new SplineCurve([
-    new Vector2(-10, 0),
-    new Vector2(-5, 5),
-    new Vector2(0, 0),
-    new Vector2(5, -5),
-    new Vector2(10, 0),
-    new Vector2(5, 10),
-    new Vector2(-5, 10),
-    new Vector2(-10, -10),
-    new Vector2(-15, -8),
-    new Vector2(-10, 0),
+  // Create a sine-like wave
+  const curve = new THREE.SplineCurve([
+    new THREE.Vector2(-10, 0),
+    new THREE.Vector2(-5, 5),
+    new THREE.Vector2(0, 0),
+    new THREE.Vector2(5, -5),
+    new THREE.Vector2(10, 0),
+    new THREE.Vector2(5, 10),
+    new THREE.Vector2(-5, 10),
+    new THREE.Vector2(-10, -10),
+    new THREE.Vector2(-15, -8),
+    new THREE.Vector2(-10, 0),
   ]);
 
   const points = curve.getPoints(50);
-  const geometry = new BufferGeometry().setFromPoints(points);
-  const material = new LineBasicMaterial({ color: 0x00ff00 });
-  const splineObjet = new Line(geometry, material);
-  splineObjet.rotation.x = Math.PI * 0.5;
-  splineObjet.position.y = 0.05;
-  scene.add(splineObjet);
+  const geometry = new THREE.BufferGeometry().setFromPoints(points);
+  const material = new THREE.LineBasicMaterial({ color: 0xff0000 });
+  const splineObject = new THREE.Line(geometry, material);
+  splineObject.rotation.x = Math.PI * 0.5;
+  splineObject.position.y = 0.05;
+  scene.add(splineObject);
 
-  function resizeRendererToDisplaySize(renderer: WebGLRenderer) {
+  function resizeRendererToDisplaySize(renderer: any) {
     const canvas = renderer.domElement;
     const width = canvas.clientWidth;
     const height = canvas.clientHeight;
@@ -221,9 +199,9 @@ function init() {
     return needResize;
   }
 
-  const targetPosition = new Vector3();
-  const tankPosition = new Vector2();
-  const tankTarget = new Vector2();
+  const targetPosition = new THREE.Vector3();
+  const tankPosition = new THREE.Vector2();
+  const tankTarget = new THREE.Vector2();
 
   const cameras = [
     { cam: camera, desc: "detached camera" },
@@ -232,9 +210,10 @@ function init() {
     { cam: tankCamera, desc: "above back of tank" },
   ];
 
-  const infoElem = document.getElementById("info") as HTMLDivElement;
+  const infoElem = document.querySelector("#info");
+
   function render(time: number) {
-    time = time * 0.001;
+    time *= 0.001;
 
     if (resizeRendererToDisplaySize(renderer)) {
       const canvas = renderer.domElement;
@@ -245,7 +224,7 @@ function init() {
       });
     }
 
-    // target
+    // move target
     targetOrbit.rotation.y = time * 0.27;
     targetBob.position.y = Math.sin(time * 2) * 4;
     targetMesh.rotation.x = time * 7;
@@ -253,20 +232,21 @@ function init() {
     targetMaterial.emissive.setHSL((time * 10) % 1, 1, 0.25);
     targetMaterial.color.setHSL((time * 10) % 1, 1, 0.25);
 
-    // tank
+    // move tank
     const tankTime = time * 0.05;
     curve.getPointAt(tankTime % 1, tankPosition);
-    tank.position.set(tankPosition.x, 0, tankPosition.y);
     curve.getPointAt((tankTime + 0.01) % 1, tankTarget);
+    tank.position.set(tankPosition.x, 0, tankPosition.y);
     tank.lookAt(tankTarget.x, 0, tankTarget.y);
 
-    // position turret
+    // face turret at target
     targetMesh.getWorldPosition(targetPosition);
     turretPivot.lookAt(targetPosition);
+
     // make the turretCamera look at target
     turretCamera.lookAt(targetPosition);
 
-    // make the targetCameraPivot ook at the tank
+    // make the targetCameraPivot look at the at the tank
     tank.getWorldPosition(targetPosition);
     targetCameraPivot.lookAt(targetPosition);
 
@@ -276,10 +256,13 @@ function init() {
 
     const camera = cameras[(time * 0.25) % cameras.length | 0];
     infoElem!.textContent = camera.desc;
+
     renderer.render(scene, camera.cam);
+
     requestAnimationFrame(render);
   }
+
   requestAnimationFrame(render);
 }
 
-init();
+main();
